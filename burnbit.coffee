@@ -1,5 +1,4 @@
-torrents = {}
-buffers = []
+callbackData = []
 styles = {normal: "burnbit_normal", compact: "burnbit_compact"}
 
 hasClass = (tag, name) ->
@@ -11,61 +10,62 @@ addClass = (tag, name) ->
 fillDetails = (tag, seeds, peers) ->
   tag.innerHTML = "<span class='burnbit_button_text' style='line-height:1;'>torrent</span> <span class='burnbit_torrent_details'><span class='s burnbit_seeds'>#{seeds} seeds</span><span class='p burnbit_peers'>#{peers} peers</span></span>"
 
-finalize = (tag, seeds, peers) ->
-  bbstyle = tag.getAttribute('burnbit_style')
+finalize = (alive, href, seeds, peers) ->
+  console.debug this: this, alive: alive, href: href, seeds: seeds, peers: peers
+  return if @torrentified?
+  bbstyle = @getAttribute('burnbit_style')
+  @href = href
+  @torrentified = true
+
   if bbstyle?
     bbstyle = bbstyle.toLowerCase()
     return if bbstyle.indexOf('custom') >= 0
     for styleKey, styleValue of styles
       if bbstyle.indexOf(styleKey) >= 0
-        addClass(tag, styleValue)
-        fillDetails(tag, seeds, peers)
+        addClass(@, styleValue)
+        fillDetails(@, seeds, peers)
         return undefined
-  addClass(tag, 'burnbit_normal')
-  fillDetails(tag, seeds, peers)
+  addClass(@, 'burnbit_normal')
+  fillDetails(@, seeds, peers)
   return undefined
 
 makeCallback = (n) ->
   name = "burnBitRender#{n}"
-  window[name] = (infos) ->
-    delete window[name]
-    if buffer = buffers[n]
-      for tag, m in buffer[2]
-        console.debug infos[m]
-        [alive, href, seeds, peers] = infos[m]
 
-        tag.href = href
-        finalize(tag, seeds, peers)
+  window[name] = (torrents) ->
+    for torrent, m in torrents
+      finalize.apply(callbackData[n].tags[m], torrent)
+    delete window[name]
 
   return name
 
 request = ->
-  queries = []
-  tags = []
-  buffer = [0, queries, tags]
-  buffers.push(buffer)
+  torrents = for tag, torrentId in document.getElementsByClassName('burnbit_torrent')
+    urls = tag.getAttribute('burnbit_file').split('|')
+    [tag, ("u[#{torrentId}][]=#{escape(url)}" for url in urls)]
 
-  for file, tag of torrents
-    query = "u[#{queries.length}][]=#{escape(file)}"
-    queryLength = query.length + 1
+  callback = {tags: [], bytes: 0, queries: []}
+  callbackData.push(callback)
 
-    if queryLength < 1600 # ignore any burnbit_file that's >= 1600
-      if (buffer[0] + queryLength) >= 1600 || queries.length >= 20
-        queries = []
-        tags = []
-        buffer = [0, queries, tags]
-        buffers.push(buffer)
+  for [tag, queries] in torrents
+    bytes = 0
+    bytes += (query.length + 1) for query in queries
+    if bytes < 1600
+      if (callback.bytes + bytes) >= 1600 || callback.tags.length >= 20
+        callback = {tags: [], bytes: 0, queries: []}
+        callbackData.push(callback)
+      callback.tags.push(tag)
+      callback.bytes += bytes
+      callback.queries.push(query) for query in queries
 
-      queries.push(query)
-      tags.push(tag)
-      buffer[0] += queryLength
+  console.debug(callbackData)
 
-  for buffer, n in buffers
-    if buffer[0] > 0
-      a = document.createElement('script')
-      a.src = "http://api.burnbit.com/getTorrent?#{buffer[1].join('&')}&callback=#{makeCallback(n)}"
-      document.body.appendChild(a)
-  undefined
+  for req, n in callbackData
+    a = document.createElement('script')
+    a.src = "http://api.burnbit.com/getTorrent?#{req.queries.join('&')}&callback=#{makeCallback(n)}"
+    document.body.appendChild(a)
+
+  return undefined
 
 oldOnLoad = window.onload
 window.onload = ->
@@ -85,8 +85,5 @@ window.onload = ->
   else
     style.appendChild(document.createTextNode(e + d))
   document.getElementsByTagName('head')[0].appendChild(style)
-
-  for tag in document.getElementsByClassName('burnbit_torrent')
-    torrents[tag.getAttribute('burnbit_file')] = tag
 
   request()
