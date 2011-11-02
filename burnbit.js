@@ -18,13 +18,6 @@
   };
   finalize = function(alive, href, seeds, peers) {
     var bbstyle, styleKey, styleValue;
-    console.debug({
-      "this": this,
-      alive: alive,
-      href: href,
-      seeds: seeds,
-      peers: peers
-    });
     if (this.torrentified != null) {
       return;
     }
@@ -114,7 +107,6 @@
         }
       }
     }
-    console.debug(callbackData);
     for (n = 0, _len4 = callbackData.length; n < _len4; n++) {
       req = callbackData[n];
       a = document.createElement('script');
@@ -124,22 +116,17 @@
   };
   oldOnLoad = window.onload;
   window.onload = function() {
-    var a, b, c, d, e, style;
+    var css, style;
     if (typeof oldOnLoad === "function") {
       oldOnLoad();
     }
-    a = "background-color: #FFF; font-family: arial; text-decoration: none; border: none; color: #444;";
-    b = "display: block; text-align: left;";
-    c = "font-weight: bold; font-size: 9px; width: 100%;";
-    d = " .burnbit_torrent_details span.s { color: #6a902a; } .burnbit_torrent_details span.p { padding-left: 2px; color: #787777; }";
-    e = "n.burnbit_normal { " + a + " height: 30px; width: 112px; padding-left: 24px; padding-top: 2px; }  a.burnbit_normal:hover { text-decoration: none; }   .burnbit_normal { " + b + "  background-image: url('http://api.burnbit.com/images/button/down.png'); background-repeat: no-repeat; background-position: left 3px; font-size: 17px;}   .burnbit_normal .burnbit_torrent_details { display: block; line-height: 1; " + c + " } .burnbit_normal .burnbit_button_text { display: block; }";
-    e += "a.burnbit_compact { " + a + " height: 17px; width: 160px; padding-left: 16px ;}  a.burnbit_compact:hover { text-decoration: none; } .burnbit_compact { " + b + "  background-image: url('http://api.burnbit.com/images/button/downcompact.png'); background-repeat: no-repeat; background-position: left 1px;  line-height: 11px; font-size: 15px;} .burnbit_compact .burnbit_torrent_details { line-height: 18px; " + c + "}";
+    css = "n.burnbit_normal{height:30px;width:112px;padding-left:24px;padding-top:2px;}.burnbit_normal{display:block;text-align:left;background:#fff url(http://api.burnbit.com/images/button/down.png) no-repeat left 3px fixed;font-size:17px;}.burnbit_normal .burnbit_torrent_details{display:block;line-height:1;font-weight:700;font-size:9px;width:100%;}.burnbit_normal .burnbit_button_text{display:block;}a.burnbit_compact{background-color:#FFF;font-family:arial;text-decoration:none;border:none;color:#444;height:17px;width:160px;padding-left:16px;}.burnbit_compact{display:block;text-align:left;background:#fff url(http://api.burnbit.com/images/button/downcompact.png) no-repeat left 1px;line-height:11px;font-size:15px;}.burnbit_compact .burnbit_torrent_details{line-height:18px;font-weight:700;font-size:9px;width:100%;}.burnbit_torrent_details span.s{color:#6a902a;}.burnbit_torrent_details span.p{padding-left:2px;color:#787777;}a.burnbit_normal:hover,a.burnbit_compact:hover{text-decoration:none;}";
     style = document.createElement("style");
     style.setAttribute("type", "text/css");
     if (style.styleSheet) {
-      style.styleSheet.cssText = e + d;
+      style.styleSheet.cssText = css;
     } else {
-      style.appendChild(document.createTextNode(e + d));
+      style.appendChild(document.createTextNode(css));
     }
     document.getElementsByTagName('head')[0].appendChild(style);
     return request();
